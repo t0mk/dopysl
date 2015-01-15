@@ -28,10 +28,13 @@ export DO_API_KEY=...
 
 ## Usage
 
-Theres is as Proxy singleton which you can use to query DigitalOcean API. To list all the droplets:
+You have to call the dopysl.init() first to authenticate.
+
+To list all the droplets:
 
 ```python
 import dopysl
+dopysl.init()
 print dopysl.all_active_droplets()
 ```
 
@@ -43,6 +46,7 @@ import json
 
 pp = lambda chunk: json.dumps(chunk, sort_keys=True, indent=4)
 
+dopysl.init()
 pp(dopysl.all_active_droplets())
 ```
 
@@ -50,6 +54,7 @@ If you use APIv2 you can use strings instead of id for regions, sizes, etc.
 i.e. you can do
 
 ```python
+dopysl.init()
 dopysl.new_droplet('new_vm', '512mb', 'lamp', 'ams2')
 ```
 
@@ -60,6 +65,7 @@ If you use APIv1 you first need to get ID of those.
 The methods of the DoManager are self explanatory; ex.
 
 ```
+dopysl.init()
 dopysl.all_active_droplets()
 dopysl.show_droplet('12345')
 dopysl.destroy_droplet('12345')
@@ -76,6 +82,7 @@ is using names instead of IDs for domains and slugs for
 sizes, images and datacenters; ex.
 
 ```
+dopysl.init()
 dopysl.show_domain('exapmle.com')
 dopysl.new_droplet('new_droplet', '512mb', 'lamp', 'ams2')
 ```
