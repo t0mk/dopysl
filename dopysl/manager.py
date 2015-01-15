@@ -141,7 +141,7 @@ class DoManager(object):
         if self.api_version == 2:
             params = {'image': image_id}
             json = self.droplet_v2_action(id, 'restore', params)
-        else: 
+        else:
             params = {'image_id': image_id}
             json = self.request('/droplets/%s/restore/' % id, params)
         json.pop('status', None)
@@ -217,7 +217,7 @@ class DoManager(object):
     def destroy_image(self, image_id):
         if self.api_version == 2:
             self.request('/images/%s' % id, method='DELETE')
-        else: 
+        else:
             self.request('/images/%s/destroy' % image_id)
         return True
 
@@ -312,7 +312,7 @@ class DoManager(object):
     def new_domain_record(self, domain_id, record_type, data, name=None, priority=None, port=None, weight=None):
         params = {'data': data}
 
-        if self.api_version == 2: 
+        if self.api_version == 2:
             params['type'] = record_type
         else:
             params['record_type'] = record_type
@@ -355,7 +355,7 @@ class DoManager(object):
     def destroy_domain_record(self, domain_id, record_id):
         if self.api_version == 2:
             self.request('/domains/%s/records/%s' % (domain_id, record_id), method='DELETE')
-        else: 
+        else:
             self.request('/domains/%s/records/%s/destroy/' % (domain_id, record_id))
         return True
 
@@ -452,18 +452,3 @@ class DoManager(object):
 
         return json
 
-
-if __name__=='__main__':
-    import os
-    if os.environ.get('DO_API_VERSION') == '2':
-        api_token = os.environ.get('DO_API_TOKEN') or os.environ['DO_API_KEY']
-        do = DoManager(None, api_token, 2)
-    else:
-        client_id = os.environ['DO_CLIENT_ID']
-        api_key = os.environ['DO_API_KEY']
-        do = DoManager(client_id, api_key, 1)
-    import sys
-    fname = sys.argv[1]
-    import pprint
-    # size_id: 66, image_id: 1601, region_id: 1
-    pprint.pprint(getattr(do, fname)(*sys.argv[2:]))

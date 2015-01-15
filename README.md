@@ -32,7 +32,7 @@ Theres is as Proxy singleton which you can use to query DigitalOcean API. To lis
 
 ```python
 import dopysl
-print dopysl.Proxy.all_active_droplets()
+print dopysl.Proxy().all_active_droplets()
 ```
 
 alternatively more prettily:
@@ -43,7 +43,7 @@ import json
 
 pp = lambda chunk: json.dumps(chunk, sort_keys=True, indent=4)
 
-pp(dopysl.Proxy.all_active_droplets())
+pp(dopysl.Proxy().all_active_droplets())
 ```
 
 If you use APIv2 you can use strings instead of id for regions, sizes, etc.
@@ -60,15 +60,15 @@ If you use APIv1 you first need to get ID of those.
 The methods of the DoManager are self explanatory; ex.
 
 ```
-do.all_active_droplets()
-do.show_droplet('12345')
-do.destroy_droplet('12345')
-do.all_regions()
-do.all_images()
-do.all_ssh_keys()
-do.sizes()
-do.all_domains()
-do.new_droplet('new_droplet', 66, 1601, 1)
+dopysl.Proxy().all_active_droplets()
+dopysl.Proxy().show_droplet('12345')
+dopysl.Proxy().destroy_droplet('12345')
+dopysl.Proxy().call_regions()
+dopysl.Proxy().call_images()
+dopysl.Proxy().call_ssh_keys()
+dopysl.Proxy().sizes()
+dopysl.Proxy().all_domains()
+dopysl.Proxy().new_droplet('new_droplet', 66, 1601, 1)
 ```
 
 The methods for v.2 API are similar, the only difference
@@ -76,8 +76,8 @@ is using names instead of IDs for domains and slugs for
 sizes, images and datacenters; ex.
 
 ```
-do.show_domain('exapmle.com')
-do.new_droplet('new_droplet', '512mb', 'lamp', 'ams2')
+dopysl.Proxy().show_domain('exapmle.com')
+dopysl.Proxy().new_droplet('new_droplet', '512mb', 'lamp', 'ams2')
 ```
 
 More in https://github.com/t0mk/dopysl/blob/master/dopy/manager.py
