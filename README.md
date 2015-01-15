@@ -32,7 +32,7 @@ Theres is as Proxy singleton which you can use to query DigitalOcean API. To lis
 
 ```python
 import dopysl
-print dopysl.Proxy().all_active_droplets()
+print dopysl.all_active_droplets()
 ```
 
 alternatively more prettily:
@@ -43,14 +43,14 @@ import json
 
 pp = lambda chunk: json.dumps(chunk, sort_keys=True, indent=4)
 
-pp(dopysl.Proxy().all_active_droplets())
+pp(dopysl.all_active_droplets())
 ```
 
 If you use APIv2 you can use strings instead of id for regions, sizes, etc.
 i.e. you can do
 
 ```python
-dopysl.Proxy().new_droplet('new_vm', '512mb', 'lamp', 'ams2')
+dopysl.new_droplet('new_vm', '512mb', 'lamp', 'ams2')
 ```
 
 If you use APIv1 you first need to get ID of those.
@@ -60,15 +60,15 @@ If you use APIv1 you first need to get ID of those.
 The methods of the DoManager are self explanatory; ex.
 
 ```
-dopysl.Proxy().all_active_droplets()
-dopysl.Proxy().show_droplet('12345')
-dopysl.Proxy().destroy_droplet('12345')
-dopysl.Proxy().call_regions()
-dopysl.Proxy().call_images()
-dopysl.Proxy().call_ssh_keys()
-dopysl.Proxy().sizes()
-dopysl.Proxy().all_domains()
-dopysl.Proxy().new_droplet('new_droplet', 66, 1601, 1)
+dopysl.all_active_droplets()
+dopysl.show_droplet('12345')
+dopysl.destroy_droplet('12345')
+dopysl.call_regions()
+dopysl.call_images()
+dopysl.call_ssh_keys()
+dopysl.sizes()
+dopysl.all_domains()
+dopysl.new_droplet('new_droplet', 66, 1601, 1)
 ```
 
 The methods for v.2 API are similar, the only difference
@@ -76,8 +76,8 @@ is using names instead of IDs for domains and slugs for
 sizes, images and datacenters; ex.
 
 ```
-dopysl.Proxy().show_domain('exapmle.com')
-dopysl.Proxy().new_droplet('new_droplet', '512mb', 'lamp', 'ams2')
+dopysl.show_domain('exapmle.com')
+dopysl.new_droplet('new_droplet', '512mb', 'lamp', 'ams2')
 ```
 
 More in https://github.com/t0mk/dopysl/blob/master/dopy/manager.py
