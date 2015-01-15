@@ -87,4 +87,4 @@ dopysl.show_domain('exapmle.com')
 dopysl.new_droplet('new_droplet', '512mb', 'lamp', 'ams2')
 ```
 
-More in https://github.com/t0mk/dopysl/blob/master/dopy/manager.py
+More in https://github.com/t0mk/dopysl/blob/master/dopysl/__init__.py
