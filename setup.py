@@ -11,7 +11,7 @@ def read(filename):
 
 setup(
     name="dopysl",
-    version=dopy.__version__,
+    version=dopysl.__version__,
     description="Digital Ocean PYthon client that Sucks Less",
     long_description=read("README.md"),
     author="Tomas Karasek",
