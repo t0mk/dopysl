@@ -3,7 +3,7 @@
 __version__ = '0.0.1'
 __license__ = 'MIT'
 
-import manager
+import inspect
 import os
 import requests
 
@@ -41,19 +41,6 @@ def usage():
     sys.exit(1)
 
 
-class Proxy(object):
-    _manager = None
-    def __new__(cls, *args, **kwargs):
-        if not cls._manager:
-            if os.environ.get('DO_API_TOKEN'):
-                api_token = os.environ.get('DO_API_TOKEN')
-                cls._manager = manager.DoManager(None, api_token, 2)
-            else:
-                # we assume APIv1
-                client_id = os.environ.get('DO_CLIENT_ID') or usage()
-                api_key = os.environ.get('DO_API_KEY') or usage()
-                cls._manager = manager.DoManager(client_id, api_key, 1)
-        return cls._manager
 
 
 class DoError(RuntimeError):
@@ -499,19 +486,34 @@ class DoManager(object):
 
         return json
 
+
+class Proxy(object):
+    _manager = None
+    def __new__(cls, *args, **kwargs):
+        if not cls._manager:
+            if os.environ.get('DO_API_TOKEN'):
+                api_token = os.environ.get('DO_API_TOKEN')
+                cls._manager = DoManager(None, api_token, 2)
+            else:
+                # we assume APIv1
+                client_id = os.environ.get('DO_CLIENT_ID') or usage()
+                api_key = os.environ.get('DO_API_KEY') or usage()
+                cls._manager = DoManager(client_id, api_key, 1)
+        return cls._manager
+
+
 def init():
     """ checks if credentials are present and initalizes the module """
     manager = Proxy()
 
-    import inspect
     current_module = __import__(__name__)
     # Following registers all the methods of DoManager to current namespace
     # so that we can call straight list
     # dopysl.init()
     # dopysl.all_active_droplets()
     for name, method in inspect.getmembers(manager, inspect.ismethod):
-        if name != "__init__"
-        setattr(current_module, name, method)
+        if name != "__init__":
+            setattr(current_module, name, method)
 
 
 
