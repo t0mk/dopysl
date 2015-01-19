@@ -3,7 +3,9 @@
 __version__ = '0.0.2'
 __license__ = 'MIT'
 
+
 import inspect
+import json
 import os
 import requests
 
@@ -40,9 +42,6 @@ def usage():
     print DO_API_CREDENTIALS
     sys.exit(1)
 
-
-
-
 class DoError(RuntimeError):
     pass
 
@@ -58,11 +57,11 @@ class DoManager(object):
             self.api_endpoint += '/v2'
 
     def all_active_droplets(self):
-        json = self.request('/droplets/')
-        return json['droplets']
+        json_out = self.request('/droplets/')
+        return json_out['droplets']
 
     def new_droplet(self, name, size_id, image_id, region_id,
-            ssh_key_ids=None, virtio=False, private_networking=False,
+            ssh_keys, virtio=False, private_networking=False,
             backups_enabled=False):
         if self.api_version == 2:
             params = {
@@ -74,9 +73,10 @@ class DoManager(object):
                 'private_networking': private_networking,
                 'backups_enabled': backups_enabled,
             }
-            if ssh_key_ids:
-                params['ssh_keys'] = ssh_key_ids
-            json = self.request('/droplets', params=params, method='POST')
+            if not isinstance(ssh_keys, list):
+                ssh_keys = [ssh_keys]
+            params['ssh_keys'] = ssh_keys
+            json_out = self.request('/droplets', params=params, method='POST')
         else:
             params = {
                 'name': name,
@@ -90,163 +90,163 @@ class DoManager(object):
             if ssh_key_ids:
                 params['ssh_key_ids'] = ssh_key_ids
 
-            json = self.request('/droplets/new', params=params)
-        return json['droplet']
+            json_out = self.request('/droplets/new', params=params)
+        return json_out['droplet']
 
     def show_droplet(self, id):
-        json = self.request('/droplets/%s' % id)
-        return json['droplet']
+        json_out = self.request('/droplets/%s' % id)
+        return json_out['droplet']
 
     def droplet_v2_action(self, id, type, params={}):
         params = {
             'type': type
         }
-        json = self.request('/droplets/%s/actions' % id, params=params, method='POST')
-        return json
+        json_out = self.request('/droplets/%s/actions' % id, params=params, method='POST')
+        return json_out
 
     def reboot_droplet(self, id):
         if self.api_version == 2:
-            json = self.droplet_v2_action(id, 'reboot')
+            json_out = self.droplet_v2_action(id, 'reboot')
         else:
-            json = self.request('/droplets/%s/reboot/' % id)
-        json.pop('status', None)
-        return json
+            json_out = self.request('/droplets/%s/reboot/' % id)
+        json_out.pop('status', None)
+        return json_out
 
     def power_cycle_droplet(self, id):
         if self.api_version == 2:
-            json = self.droplet_v2_action(id, 'power_cycle')
+            json_out = self.droplet_v2_action(id, 'power_cycle')
         else:
-            json = self.request('/droplets/%s/power_cycle/' % id)
-        json.pop('status', None)
-        return json
+            json_out = self.request('/droplets/%s/power_cycle/' % id)
+        json_out.pop('status', None)
+        return json_out
 
     def shutdown_droplet(self, id):
         if self.api_version == 2:
-            json = self.droplet_v2_action(id, 'shutdown')
+            json_out = self.droplet_v2_action(id, 'shutdown')
         else:
-            json = self.request('/droplets/%s/shutdown/' % id)
-        json.pop('status', None)
-        return json
+            json_out = self.request('/droplets/%s/shutdown/' % id)
+        json_out.pop('status', None)
+        return json_out
 
     def power_off_droplet(self, id):
         if self.api_version == 2:
-            json = self.droplet_v2_action(id, 'power_off')
+            json_out = self.droplet_v2_action(id, 'power_off')
         else:
-            json = self.request('/droplets/%s/power_off/' % id)
-        json.pop('status', None)
-        return json
+            json_out = self.request('/droplets/%s/power_off/' % id)
+        json_out.pop('status', None)
+        return json_out
 
     def power_on_droplet(self, id):
         if self.api_version == 2:
-            json = self.droplet_v2_action(id, 'power_on')
+            json_out = self.droplet_v2_action(id, 'power_on')
         else:
-            json = self.request('/droplets/%s/power_on/' % id)
-        json.pop('status', None)
-        return json
+            json_out = self.request('/droplets/%s/power_on/' % id)
+        json_out.pop('status', None)
+        return json_out
 
     def password_reset_droplet(self, id):
         if self.api_version == 2:
-            json = self.droplet_v2_action(id, 'password_reset')
+            json_out = self.droplet_v2_action(id, 'password_reset')
         else:
-            json = self.request('/droplets/%s/password_reset/' % id)
-        json.pop('status', None)
-        return json
+            json_out = self.request('/droplets/%s/password_reset/' % id)
+        json_out.pop('status', None)
+        return json_out
 
     def resize_droplet(self, id, size_id):
         if self.api_version == 2:
             params = {'size': size_id}
-            json = self.droplet_v2_action(id, 'resize', params)
+            json_out = self.droplet_v2_action(id, 'resize', params)
         else:
             params = {'size_id': size_id}
-            json = self.request('/droplets/%s/resize/' % id, params)
-        json.pop('status', None)
-        return json
+            json_out = self.request('/droplets/%s/resize/' % id, params)
+        json_out.pop('status', None)
+        return json_out
 
     def snapshot_droplet(self, id, name):
         params = {'name': name}
         if self.api_version == 2:
-            json = self.droplet_v2_action(id, 'snapshot', params)
+            json_out = self.droplet_v2_action(id, 'snapshot', params)
         else:
-            json = self.request('/droplets/%s/snapshot/' % id, params)
-        json.pop('status', None)
-        return json
+            json_out = self.request('/droplets/%s/snapshot/' % id, params)
+        json_out.pop('status', None)
+        return json_out
 
     def restore_droplet(self, id, image_id):
         if self.api_version == 2:
             params = {'image': image_id}
-            json = self.droplet_v2_action(id, 'restore', params)
+            json_out = self.droplet_v2_action(id, 'restore', params)
         else:
             params = {'image_id': image_id}
-            json = self.request('/droplets/%s/restore/' % id, params)
-        json.pop('status', None)
-        return json
+            json_out = self.request('/droplets/%s/restore/' % id, params)
+        json_out.pop('status', None)
+        return json_out
 
     def rebuild_droplet(self, id, image_id):
         if self.api_version == 2:
             params = {'image': image_id}
-            json = self.droplet_v2_action(id, 'rebuild', params)
+            json_out = self.droplet_v2_action(id, 'rebuild', params)
         else:
             params = {'image_id': image_id}
-            json = self.request('/droplets/%s/rebuild/' % id, params)
-        json.pop('status', None)
-        return json
+            json_out = self.request('/droplets/%s/rebuild/' % id, params)
+        json_out.pop('status', None)
+        return json_out
 
     def enable_backups_droplet(self, id):
         if self.api_version == 2:
-            json = self.droplet_v2_action(id, 'enable_backups')
+            json_out = self.droplet_v2_action(id, 'enable_backups')
         else:
-            json = self.request('/droplets/%s/enable_backups/' % id)
-        json.pop('status', None)
-        return json
+            json_out = self.request('/droplets/%s/enable_backups/' % id)
+        json_out.pop('status', None)
+        return json_out
 
     def disable_backups_droplet(self, id):
         if self.api_version == 2:
-            json = self.droplet_v2_action(id, 'disable_backups')
+            json_out = self.droplet_v2_action(id, 'disable_backups')
         else:
-            json = self.request('/droplets/%s/disable_backups/' % id)
-        json.pop('status', None)
-        return json
+            json_out = self.request('/droplets/%s/disable_backups/' % id)
+        json_out.pop('status', None)
+        return json_out
 
     def rename_droplet(self, id, name):
         params = {'name': name}
         if self.api_version == 2:
-            json = self.droplet_v2_action(id, 'rename', params)
+            json_out = self.droplet_v2_action(id, 'rename', params)
         else:
-            json = self.request('/droplets/%s/rename/' % id, params)
-        json.pop('status', None)
-        return json
+            json_out = self.request('/droplets/%s/rename/' % id, params)
+        json_out.pop('status', None)
+        return json_out
 
     def destroy_droplet(self, id, scrub_data=True):
         if self.api_version == 2:
-            json = self.request('/droplets/%s' % id, method='DELETE')
+            json_out = self.request('/droplets/%s' % id, method='DELETE')
         else:
             params = {'scrub_data': '1' if scrub_data else '0'}
-            json = self.request('/droplets/%s/destroy/' % id, params)
-        json.pop('status', None)
-        return json
+            json_out = self.request('/droplets/%s/destroy/' % id, params)
+        json_out.pop('status', None)
+        return json_out
 
 #regions==========================================
     def all_regions(self):
-        json = self.request('/regions/')
-        return json['regions']
+        json_out = self.request('/regions/')
+        return json_out['regions']
 
 #images==========================================
     def all_images(self, filter='global'):
         params = {'filter': filter}
-        json = self.request('/images/', params)
-        return json['images']
+        json_out = self.request('/images/', params)
+        return json_out['images']
 
     def image_v2_action(self, id, type, params={}):
         params = {
             'type': type
         }
-        json = self.request('/images/%s/actions' % id, params=params, method='POST')
-        return json
+        json_out = self.request('/images/%s/actions' % id, params=params, method='POST')
+        return json_out
 
     def show_image(self, image_id):
         params= {'image_id': image_id}
-        json = self.request('/images/%s' % image_id)
-        return json['image']
+        json_out = self.request('/images/%s' % image_id)
+        return json_out['image']
 
     def destroy_image(self, image_id):
         if self.api_version == 2:
@@ -258,45 +258,45 @@ class DoManager(object):
     def transfer_image(self, image_id, region_id):
         if self.api_version == 2:
             params = {'region': region_id}
-            json = self.image_v2_action(id, 'transfer', params)
+            json_out = self.image_v2_action(id, 'transfer', params)
         else:
             params = {'region_id': region_id}
-            json = self.request('/images/%s/transfer' % image_id, params)
-        json.pop('status', None)
-        return json
+            json_out = self.request('/images/%s/transfer' % image_id, params)
+        json_out.pop('status', None)
+        return json_out
 
 #ssh_keys=========================================
     def all_ssh_keys(self):
         if self.api_version == 2:
-            json = self.request('/account/keys')
+            json_out = self.request('/account/keys')
         else:
-            json = self.request('/ssh_keys/')
-        return json['ssh_keys']
+            json_out = self.request('/ssh_keys/')
+        return json_out['ssh_keys']
 
     def new_ssh_key(self, name, pub_key):
         if self.api_version == 2:
             params = {'name': name, 'public_key': pub_key}
-            json = self.request('/account/keys', params, method='POST')
+            json_out = self.request('/account/keys', params, method='POST')
         else:
             params = {'name': name, 'ssh_pub_key': pub_key}
-            json = self.request('/ssh_keys/new/', params)
-        return json['ssh_key']
+            json_out = self.request('/ssh_keys/new/', params)
+        return json_out['ssh_key']
 
     def show_ssh_key(self, key_id):
         if self.api_version == 2:
-            json = self.request('/account/keys/%s/' % key_id)
+            json_out = self.request('/account/keys/%s/' % key_id)
         else:
-            json = self.request('/ssh_keys/%s/' % key_id)
-        return json['ssh_key']
+            json_out = self.request('/ssh_keys/%s/' % key_id)
+        return json_out['ssh_key']
 
     def edit_ssh_key(self, key_id, name, pub_key):
         if self.api_version == 2:
             params = {'name': name} # v2 API doesn't allow to change key body now
-            json = self.request('/account/keys/%s/' % key_id, params, method='PUT')
+            json_out = self.request('/account/keys/%s/' % key_id, params, method='PUT')
         else:
             params = {'name': name, 'ssh_pub_key': pub_key}  # the doc needs to be improved
-            json = self.request('/ssh_keys/%s/edit/' % key_id, params)
-        return json['ssh_key']
+            json_out = self.request('/ssh_keys/%s/edit/' % key_id, params)
+        return json_out['ssh_key']
 
     def destroy_ssh_key(self, key_id):
         if self.api_version == 2:
@@ -307,13 +307,13 @@ class DoManager(object):
 
 #sizes============================================
     def sizes(self):
-        json = self.request('/sizes/')
-        return json['sizes']
+        json_out = self.request('/sizes/')
+        return json_out['sizes']
 
 #domains==========================================
     def all_domains(self):
-        json = self.request('/domains/')
-        return json['domains']
+        json_out = self.request('/domains/')
+        return json_out['domains']
 
     def new_domain(self, name, ip):
         params = {
@@ -321,14 +321,14 @@ class DoManager(object):
                 'ip_address': ip
             }
         if self.api_version == 2:
-            json = self.request('/domains', params=params, method='POST')
+            json_out = self.request('/domains', params=params, method='POST')
         else:
-            json = self.request('/domains/new/', params)
-        return json['domain']
+            json_out = self.request('/domains/new/', params)
+        return json_out['domain']
 
     def show_domain(self, domain_id):
-        json = self.request('/domains/%s/' % domain_id)
-        return json['domain']
+        json_out = self.request('/domains/%s/' % domain_id)
+        return json_out['domain']
 
     def destroy_domain(self, domain_id):
         if self.api_version == 2:
@@ -338,10 +338,10 @@ class DoManager(object):
         return True
 
     def all_domain_records(self, domain_id):
-        json = self.request('/domains/%s/records/' % domain_id)
+        json_out = self.request('/domains/%s/records/' % domain_id)
         if self.api_version == 2:
-            return json['domain_records']
-        return json['records']
+            return json_out['domain_records']
+        return json_out['records']
 
     def new_domain_record(self, domain_id, record_type, data, name=None, priority=None, port=None, weight=None):
         params = {'data': data}
@@ -357,22 +357,22 @@ class DoManager(object):
         if weight: params['weight'] = weight
 
         if self.api_version == 2:
-            json = self.request('/domains/%s/records/' % domain_id, params, method='POST')
+            json_out = self.request('/domains/%s/records/' % domain_id, params, method='POST')
         else:
-            json = self.request('/domains/%s/records/new/' % domain_id, params)
-        return json['record']
+            json_out = self.request('/domains/%s/records/new/' % domain_id, params)
+        return json_out['record']
 
     def show_domain_record(self, domain_id, record_id):
-        json = self.request('/domains/%s/records/%s' % (domain_id, record_id))
+        json_out = self.request('/domains/%s/records/%s' % (domain_id, record_id))
         if self.api_version == 2:
-            return json['domain_record']
-        return json['record']
+            return json_out['domain_record']
+        return json_out['record']
 
     def edit_domain_record(self, domain_id, record_id, record_type, data, name=None, priority=None, port=None, weight=None):
         if self.api_version == 2:
             params['name'] = name # API v.2 allows only record name change
-            json = self.request('/domains/%s/records/%s' % (domain_id, record_id), params, method=PUT)
-            return json['domain_record']
+            json_out = self.request('/domains/%s/records/%s' % (domain_id, record_id), params, method=PUT)
+            return json_out['domain_record']
 
         params = {
                 'record_type': record_type,
@@ -383,8 +383,8 @@ class DoManager(object):
         if priority: params['priority'] = priority
         if port: params['port'] = port
         if weight: params['weight'] = weight
-        json = self.request('/domains/%s/records/%s/edit/' % (domain_id, record_id), params)
-        return json['record']
+        json_out = self.request('/domains/%s/records/%s/edit/' % (domain_id, record_id), params)
+        return json_out['record']
 
     def destroy_domain_record(self, domain_id, record_id):
         if self.api_version == 2:
@@ -396,30 +396,30 @@ class DoManager(object):
 #events(actions in v2 API)========================
     def show_all_actions(self):
         if self.api_version == 2:
-            json = self.request('/actions')
-            return json['actions']
+            json_out = self.request('/actions')
+            return json_out['actions']
         return False # API v.1 haven't this functionality
 
     def show_action(self, action_id):
         if self.api_version == 2:
-            json = self.request('/actions/%s' % event_id)
-            return json['action']
+            json_out = self.request('/actions/%s' % event_id)
+            return json_out['action']
         return show_event(self,action_id)
 
     def show_event(self, event_id):
         if self.api_version == 2:
             return show_action(self,event_id)
-        json = self.request('/events/%s' % event_id)
-        return json['event']
+        json_out = self.request('/events/%s' % event_id)
+        return json_out['event']
 
 #low_level========================================
     def request(self, path, params={}, method='GET'):
         if not path.startswith('/'):
             path = '/'+path
         url = self.api_endpoint+path
-
         if self.api_version == 2:
             headers = { 'Authorization': "Bearer %s" % self.api_key }
+            headers['Content-Type'] = 'application/json_out'
             resp = self.request_v2(url, params=params, headers=headers, method=method)
         else:
             params['client_id'] = self.client_id
@@ -431,60 +431,61 @@ class DoManager(object):
     def request_v1(self, url, params={}, method='GET'):
         try:
             resp = requests.get(url, params=params, timeout=60)
-            json = resp.json()
+            json_out = resp.json()
         except ValueError:  # requests.models.json.JSONDecodeError
-            raise ValueError("The API server doesn't respond with a valid json")
+            raise ValueError("The API server doesn't respond with a valid json_out")
         except requests.RequestException as e:  # errors from requests
             raise RuntimeError(e)
 
         if resp.status_code != requests.codes.ok:
-            if json:
-                if 'error_message' in json:
-                    raise DoError(json['error_message'])
-                elif 'message' in json:
-                    raise DoError(json['message'])
+            if json_out:
+                if 'error_message' in json_out:
+                    raise DoError(json_out['error_message'])
+                elif 'message' in json_out:
+                    raise DoError(json_out['message'])
             # The JSON reponse is bad, so raise an exception with the HTTP status
             resp.raise_for_status()
-        if json.get('status') != 'OK':
-            raise DoError(json['error_message'])
+        if json_out.get('status') != 'OK':
+            raise DoError(json_out['error_message'])
 
-        return json
+        return json_out
 
     def request_v2(self, url, headers={}, params={}, method='GET'):
+        params = json.dumps(params)
         try:
             if method == 'POST':
                 resp = requests.post(url, params=params, headers=headers, timeout=60)
-                json = resp.json()
+                json_out = resp.json()
             elif method == 'DELETE':
                 resp = requests.delete(url, headers=headers, timeout=60)
-                json = { 'status': resp.status_code }
+                json_out = { 'status': resp.status_code }
             elif method == 'PUT':
                 resp = requests.put(url, headers=headers, params=params, timeout=60)
-                json = resp.json()
+                json_out = resp.json()
             elif method == 'GET':
                 resp = requests.get(url, headers=headers, params=params, timeout=60)
-                json = resp.json()
+                json_out = resp.json()
             else:
                 raise DoError('Unsupported method %s' % method)
 
         except ValueError:  # requests.models.json.JSONDecodeError
-            raise ValueError("The API server doesn't respond with a valid json")
+            raise ValueError("The API server doesn't respond with a valid json_out")
         except requests.RequestException as e:  # errors from requests
             raise RuntimeError(e)
 
         if resp.status_code != requests.codes.ok:
-            if json:
-                if 'error_message' in json:
-                    raise DoError(json['error_message'])
-                elif 'message' in json:
-                    raise DoError(json['message'])
+            if json_out:
+                if 'error_message' in json_out:
+                    raise DoError(json_out['error_message'])
+                elif 'message' in json_out:
+                    raise DoError(json_out['message'])
             # The JSON reponse is bad, so raise an exception with the HTTP status
             resp.raise_for_status()
 
-        if json.get('id') == 'not_found':
-            raise DoError(json['message'])
+        if json_out.get('id') == 'not_found':
+            raise DoError(json_out['message'])
 
-        return json
+        return json_out
 
 
 class Proxy(object):
