@@ -1,8 +1,4 @@
-# -*- coding: utf-8 -*-
-
-__version__ = '0.0.3'
-__license__ = 'MIT'
-
+#!/usr/bin/env python
 
 import inspect
 import json
@@ -12,26 +8,16 @@ import requests
 API_ENDPOINT = 'https://api.digitalocean.com/v2'
 DEBUG = False
 
-DO_API_CREDENTIALS = """
-Credentials for DigitalOcean API should be passed in environment variables.
-There is API v1 and v2.
-If you use APIv2 you can use strings instead of id for regions, sizes, etc.
-i.e. you can do
+DO_API_TOKEN = os.environ.get('DO_API_TOKEN')
+DO_KEYPAIR_ID = os.environ.get('DO_KEYPAIR_ID')
 
-Manager().new_droplet('new_vm', '512mb', 'lamp', 'ams2')
-
-If you want to use APIv2, you need to find out the api token from:
-https://cloud.digitalocean.com/settings/applications
-
-and you shoud set it as envvar:
-export DO_API_TOKEN=...
-
-"""
-
-
-def usage():
-    print DO_API_CREDENTIALS
-    sys.exit(1)
+# Credentials for DigitalOcean API should be passed in environment variable
+# DO_API_TOKEN'.
+# You need to find out the api token from:
+# https://cloud.digitalocean.com/settings/applications
+#
+# and you shoud set it as envvar:
+# export DO_API_TOKEN=...
 
 class DoError(RuntimeError):
     pass
@@ -64,11 +50,9 @@ def get_id_by_attr(res_pattern, res_list, attr='name'):
 
 class DoManager(object):
 
-    def __init__(self, client_id, api_key, api_version=1):
+    def __init__(self, api_key):
         self.api_endpoint = API_ENDPOINT
-        self.client_id = client_id
         self.api_key = api_key
-        self.api_version = int(api_version)
 
     def all_active_droplets(self):
         json_out = self.request('/droplets/')
@@ -77,9 +61,10 @@ class DoManager(object):
     def get_key_id(self, key_name):
         return get_id_by_attr(key_name, self.all_ssh_keys())
 
-    def new_droplet(self, name, size, image, region,
-            ssh_keys, private_networking=False,
-            backups_enabled=False):
+    def create_droplet(self, ssh_keys=[DO_KEYPAIR_ID],
+            image='coreos-stable', region='ams2', size='512mb', name='dev', 
+            private_networking=False, backups_enabled=False):
+        "fsdfsdfsdfsdfsDfsd fsdf sdfsfsdf"
         params = {
             'name': name,
             'size': size,
@@ -364,9 +349,8 @@ class Proxy(object):
     _manager = None
     def __new__(cls, *args, **kwargs):
         if not cls._manager:
-            if os.environ.get('DO_API_TOKEN'):
-                api_token = os.environ.get('DO_API_TOKEN')
-                cls._manager = DoManager(None, api_token, 2)
+            api_token = DO_API_TOKEN
+            cls._manager = DoManager(api_token)
         return cls._manager
 
 
@@ -385,3 +369,11 @@ def init():
 
 
 
+if __name__ == "__main__":
+    import argh
+    do = DoManager(DO_API_TOKEN)
+
+    parser = argh.ArghParser()
+
+    parser.add_commands([do.create_droplet])
+    parser.dispatch()
