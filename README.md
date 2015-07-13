@@ -4,26 +4,22 @@ Inspired by https://github.com/ahmontero/dop and https://github.com/devo-ps/dopy
 
 ## Installation
 
+clone this and
+
 ```
-pip install dopysl
+cp dopysl.py ~/bin/dopysl
 ```
+
+I don't care for pip and/or setuptools.
 
 ## Getting Started
 
-Credentials for DigitalOcean API should be passed in environment variables.
-There is API v1 and v2.
+Credentials for DigitalOcean API should be passed in environment variables. Only APIv2 is supported.
 
-If you want to use APIv2, you need to find out the api token from https://cloud.digitalocean.com/settings/applications and you shoud set it as envvar:
+You need to find out the api token from https://cloud.digitalocean.com/settings/applications and you shoud set it as envvar:
 
 ```sh
 export DO_API_TOKEN=...
-```
-
-If you still want to use APIv1 you need to define client ID and API key. **!!!Beware, API key for v1 is different than API token for v2 !!!**. Find it out from https://cloud.digitalocean.com/api_access and set it as:
-
-```sh
-export DO_CLIENT_ID=...
-export DO_API_KEY=...
 ```
 
 ## Usage
@@ -62,24 +58,7 @@ If you use APIv1 you first need to get ID of those.
 
 # Methods
 
-The methods of the DoManager are self explanatory; ex.
-
-```
-dopysl.init()
-dopysl.all_active_droplets()
-dopysl.show_droplet('12345')
-dopysl.destroy_droplet('12345')
-dopysl.call_regions()
-dopysl.call_images()
-dopysl.call_ssh_keys()
-dopysl.sizes()
-dopysl.all_domains()
-dopysl.new_droplet('new_droplet', 66, 1601, 1)
-```
-
-The methods for v.2 API are similar, the only difference
-is using names instead of IDs for domains and slugs for
-sizes, images and datacenters; ex.
+The methods are self explanatory. 
 
 ```
 dopysl.init()
@@ -87,4 +66,4 @@ dopysl.show_domain('exapmle.com')
 dopysl.new_droplet('new_droplet', '512mb', 'lamp', 'ams2')
 ```
 
-More in https://github.com/t0mk/dopysl/blob/master/dopysl/__init__.py
+More in https://github.com/t0mk/dopysl/blob/master/dopysl.py

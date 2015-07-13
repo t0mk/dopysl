@@ -59,6 +59,7 @@ def get_id_by_attr(res_pattern, res_list, attr='name'):
     if len(result_list) == 0:
         raise DoError("no resources found for %s, whole list: %s " %
                       (res_pattern, res_list))
+    return result_list[0]
 
 
 class DoManager(object):
@@ -73,7 +74,7 @@ class DoManager(object):
         json_out = self.request('/droplets/')
         return json_out['droplets']
 
-    def get_key_id(key_name)
+    def get_key_id(self, key_name):
         return get_id_by_attr(key_name, self.all_ssh_keys())
 
     def new_droplet(self, name, size, image, region,
