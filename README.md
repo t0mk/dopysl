@@ -4,13 +4,41 @@ Inspired by https://github.com/ahmontero/dop and https://github.com/devo-ps/dopy
 
 ## Installation
 
-clone this and
+```
+sudo apt-get install python3-pip
+sudo python3.4 -m pip install argh
+```
+
+then clone this to your ~bin/
 
 ```
-cp dopysl.py ~/bin/dopysl
+cd bin
+git clone https://github.com/t0mk/dopysl.git
 ```
 
 I don't care for pip and/or setuptools.
+
+## Setup
+
+in your .bashrc/.zshrc set
+
+```
+
+PATH=${PATH}:~/bin/dopysl
+
+# this is the v2 API token from 
+# https://cloud.digitalocean.com/settings/tokens/new
+export DO_API_TOKEN=
+
+# find out your favorite keypair id from "$ do keypairs" (after you set and
+# export the DO_API_TOKEN)
+export DO_KEYPAIR_ID=
+
+# the file with private key from your favorite keypair.
+export DO_KEY=/home/tomk/keys/tkarasek_key.pem
+```
+You can chance keyfile and keypair id in parameters. The aforementioned variables are just for defaults.
+
 
 ## Getting Started
 

@@ -1,29 +1,46 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 import inspect
 import json
 import os
 import requests
+import argh
+import subprocess
 
 API_ENDPOINT = 'https://api.digitalocean.com/v2'
 DEBUG = False
 
 DO_API_TOKEN = os.environ.get('DO_API_TOKEN')
 DO_KEYPAIR_ID = os.environ.get('DO_KEYPAIR_ID')
+DO_KEY = os.environ.get('DO_KEY')
 
-# Credentials for DigitalOcean API should be passed in environment variable
-# DO_API_TOKEN'.
-# You need to find out the api token from:
-# https://cloud.digitalocean.com/settings/applications
-#
-# and you shoud set it as envvar:
-# export DO_API_TOKEN=...
+class C:
+    blue = '\033[94m'
+    green = '\033[92m'
+    red = '\033[91m'
+    end = '\033[0m'
+
+def R(msg):
+    return C.red + msg + C.end
+
+def G(msg):
+    return C.green + msg + C.end
+            
+def B(msg):
+    return C.blue + msg + C.end
+            
+
 
 class DoError(RuntimeError):
     pass
 
-import httplib
-import urllib
+import http.client
+import urllib.request, urllib.parse, urllib.error
+
+def callCheck(command, env=None, stdin=None):
+    print("about to run \"%s\"" % command)
+    if subprocess.call(command.split(), env=env, stdin=stdin):
+        raise Exception("%s failed." % command)
 
 def print_debug():
     """ this will print HTTP requests sent """
@@ -31,11 +48,11 @@ def print_debug():
     # python-requests-print-entire-http-request-raw
     global DEBUG
     DEBUG = True
-    old_send= httplib.HTTPConnection.send
+    old_send= http.client.HTTPConnection.send
     def new_send( self, data ):
-        print urllib.unquote(data).decode('utf8')
+        print(urllib.parse.unquote(data).decode('utf8'))
         return old_send(self, data)
-    httplib.HTTPConnection.send = new_send
+    http.client.HTTPConnection.send = new_send
 
 def get_id_by_attr(res_pattern, res_list, attr='name'):
     result_list = [i['id'] for i in res_list if i[attr] == res_pattern]
@@ -61,10 +78,10 @@ class DoManager(object):
     def get_key_id(self, key_name):
         return get_id_by_attr(key_name, self.all_ssh_keys())
 
-    def create_droplet(self, ssh_keys=[DO_KEYPAIR_ID],
-            image='coreos-stable', region='ams2', size='512mb', name='dev', 
+    def create_droplet(self, name, ssh_keys=[DO_KEYPAIR_ID],
+            image='coreos-stable', region='ams2', size='512mb',
             private_networking=False, backups_enabled=False):
-        "fsdfsdfsdfsdfsDfsd fsdf sdfsfsdf"
+        "Creates droplet. see help for defualts"
         params = {
             'name': name,
             'size': size,
@@ -327,8 +344,8 @@ class DoManager(object):
             raise RuntimeError(e)
         
         if DEBUG:
-            print resp.status_code
-            print json.dumps(json_out, sort_keys=True, indent=4)
+            print(resp.status_code)
+            print(json.dumps(json_out, sort_keys=True, indent=4))
 
         if resp.status_code != requests.codes.ok:
             if json_out:
@@ -343,6 +360,67 @@ class DoManager(object):
             raise DoError(json_out['message'])
 
         return json_out
+
+    @argh.aliases('s')
+    def ssh(self, fuzzy_name, user='core', key=DO_KEY):
+        chosen = [d for d in self.all_active_droplets()
+                  if fuzzy_name in d['name']]
+        if len(chosen) > 2 :
+            raise DoError("name too ambiguous")   
+        if len(chosen) == 0 :
+            raise DoError("no droplet by that name")
+        ip = self.get_public_ip(chosen[0])
+        cmd = "ssh -o IdentitiesOnly=yes -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i %s -p 22 %s@%s" % (DO_KEY, user, ip)
+        callCheck(cmd)
+                
+    def get_private_ip(self, d):
+        for n in d['networks']['v4']:
+           if n['type'] == 'private':
+                return n['ip_address']
+
+    def get_public_ip(self, d):
+        for n in d['networks']['v4']:
+           if n['type'] == 'public':
+                return n['ip_address']
+
+    def status(self, s):
+        if s == "new":
+            return G(s)
+        if s == "active":
+            return B(s)
+        if s in ["off","archive"]:
+            return R(s)
+                
+    def droplets(self):
+        for d in self.all_active_droplets():
+            form = "%s[%s] %s -  %s, %s"
+
+            fields = (B(d['name']), G(d['region']['slug']),
+                      self.status(d['status']), self.get_public_ip(d), 
+                      self.get_private_ip(d))
+            print(form % fields)
+
+    def avail(self, s):
+        if s:
+             return G("available")
+        else:
+             return R("not avail")
+
+    @argh.aliases('r')
+    def regions(self):
+        for r in self.all_regions():
+            form = "%s: %s, features: %s"
+
+            fields = (B(r['slug']),
+                      self.avail(r['available']), ",".join(r['features']))
+            print(form % fields)
+
+    @argh.aliases('k')
+    def keypairs(self):
+        for k in self.all_ssh_keys():
+            form = "%s: id %s, \'%s\'"
+            fields = (R(k['name']), B(str(k['id'])), k['public_key'])
+            print(form % fields)
 
 
 class Proxy(object):
@@ -369,11 +447,17 @@ def init():
 
 
 
+
+
+
 if __name__ == "__main__":
-    import argh
     do = DoManager(DO_API_TOKEN)
 
     parser = argh.ArghParser()
 
-    parser.add_commands([do.create_droplet])
+    exposed = [do.create_droplet, do.ssh, do.droplets, do.regions, do.keypairs]
+    argh.assembling.set_default_command(parser, do.droplets)
+
+    parser.add_commands(exposed)
+
     parser.dispatch()
