@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import pprint
+import argparse
 import inspect
 import json
 import os
@@ -93,13 +94,17 @@ class DoManager(object):
             private_networking=False, backups_enabled=False,
             user_data=None, ipv6=None):
         "Creates droplet. see help for defualts"
+        ud = None
+        if user_data:
+            with open(user_data, 'r') as f:
+                ud = f.read()
         params = {
             'name': name,
             'size': size,
             'image': image,
             'region': region,
             'private_networking': private_networking,
-            'user_data': user_data,
+            'user_data': ud,
             'ipv6': ipv6,
             'backups': backups_enabled,
         }
@@ -197,11 +202,15 @@ class DoManager(object):
         return json_out
 
     @argh.aliases('d','destroy')
-    def destroy_droplet(self, id):
-        json_out = self.request('/droplets/%s' %
-            self.get_droplet_id_or_name(id), method='DELETE')
-        json_out.pop('status', None)
-        return json_out
+    def destroy_droplet(self, id, force=False):
+        _id = self.get_droplet_id_or_name(id)
+        answer = "y"
+        if not force:
+            answer = input("Do you really want to remove the droplet[y/n]: ")
+        if answer == "y":
+            json_out = self.request('/droplets/%s' % _id, method='DELETE')
+            json_out.pop('status', None)
+            return json_out
 
 #regions==========================================
     def all_regions(self):
@@ -463,10 +472,6 @@ def init():
     for name, method in inspect.getmembers(manager, inspect.ismethod):
         if name != "__init__":
             setattr(current_module, name, method)
-
-
-
-
 
 
 if __name__ == "__main__":
