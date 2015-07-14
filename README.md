@@ -1,6 +1,6 @@
-# Digital Ocean PYthon wrapper that Sucks Less
+# Digital Ocean PYthon wrapper that Sucks Less using APIv2
 
-Inspired by https://github.com/ahmontero/dop and https://github.com/devo-ps/dopy
+Inspired by https://github.com/ahmontero/dop and https://github.com/devo-ps/dopy. I use only APIv2.
 
 ## Installation
 
@@ -30,12 +30,12 @@ PATH=${PATH}:~/bin/dopysl
 # https://cloud.digitalocean.com/settings/tokens/new
 export DO_API_TOKEN=
 
-# find out your favorite keypair id from "$ do keypairs" (after you set and
+# find out your favorite keypair id from "$ dopysl keypairs" (after you set and
 # export the DO_API_TOKEN)
 export DO_KEYPAIR_ID=
 
 # the file with private key from your favorite keypair.
-export DO_KEY=/home/tomk/keys/tkarasek_key.pem
+export DO_KEY=
 ```
 You can chance keyfile and keypair id in parameters. The aforementioned variables are just for defaults.
 
