@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import pprint
 import inspect
 import json
 import os
@@ -38,7 +39,7 @@ import http.client
 import urllib.request, urllib.parse, urllib.error
 
 def callCheck(command, env=None, stdin=None):
-    print("about to run \"%s\"" % command)
+    print("about to run\n%s" % command)
     if subprocess.call(command.split(), env=env, stdin=stdin):
         raise Exception("%s failed." % command)
 
@@ -78,18 +79,28 @@ class DoManager(object):
     def get_key_id(self, key_name):
         return get_id_by_attr(key_name, self.all_ssh_keys())
 
+    def get_droplet_id_or_name(self, id_or_name):
+        if not id_or_name.isdigit():
+            tmp = get_id_by_attr(id_or_name, self.all_active_droplets())
+            id = tmp
+        else:
+            id = id_or_name
+        return id
+
+    @argh.aliases('c','create')
     def create_droplet(self, name, ssh_keys=[DO_KEYPAIR_ID],
             image='coreos-stable', region='ams2', size='512mb',
-            private_networking=False, backups_enabled=False):
+            private_networking=False, backups_enabled=False,
+            user_data=None, ipv6=None):
         "Creates droplet. see help for defualts"
         params = {
             'name': name,
             'size': size,
             'image': image,
             'region': region,
-            'private_networking': None,
-            'user_data': None,
-            'ipv6': True,
+            'private_networking': private_networking,
+            'user_data': user_data,
+            'ipv6': ipv6,
             'backups': backups_enabled,
         }
         if not isinstance(ssh_keys, list):
@@ -99,8 +110,14 @@ class DoManager(object):
         return json_out['droplet']
 
     def show_droplet(self, id):
-        json_out = self.request('/droplets/%s' % id)
+        
+        json_out = self.request('/droplets/%s' % 
+                self.get_droplet_id_or_name(id))
         return json_out['droplet']
+
+    @argh.aliases('show')
+    def show_droplet_readable(self, id):
+        pprint.pprint(self.show_droplet(id))
 
     def droplet_v2_action(self, id, type, params={}):
         params = {
@@ -179,8 +196,10 @@ class DoManager(object):
         json_out.pop('status', None)
         return json_out
 
-    def destroy_droplet(self, id, scrub_data=True):
-        json_out = self.request('/droplets/%s' % id, method='DELETE')
+    @argh.aliases('d','destroy')
+    def destroy_droplet(self, id):
+        json_out = self.request('/droplets/%s' %
+            self.get_droplet_id_or_name(id), method='DELETE')
         json_out.pop('status', None)
         return json_out
 
@@ -455,7 +474,8 @@ if __name__ == "__main__":
 
     parser = argh.ArghParser()
 
-    exposed = [do.create_droplet, do.ssh, do.droplets, do.regions, do.keypairs]
+    exposed = [do.create_droplet, do.ssh, do.droplets, do.regions, do.keypairs,
+               do.destroy_droplet, do.show_droplet_readable]
     argh.assembling.set_default_command(parser, do.droplets)
 
     parser.add_commands(exposed)
