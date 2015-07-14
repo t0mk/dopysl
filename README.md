@@ -37,61 +37,19 @@ export DO_KEYPAIR_ID=
 # the file with private key from your favorite keypair.
 export DO_KEY=
 ```
-You can chance keyfile and keypair id in parameters. The aforementioned variables are just for defaults.
+You can chance keyfile and keypair id in command parameters. The aforementioned variables are just for defaults.
 
-
-## Getting Started
-
-Credentials for DigitalOcean API should be passed in environment variables. Only APIv2 is supported.
-
-You need to find out the api token from https://cloud.digitalocean.com/settings/applications and you shoud set it as envvar:
-
-```sh
-export DO_API_TOKEN=...
-```
 
 ## Usage
 
-You have to call the dopysl.init() first to authenticate.
-
-To list all the droplets:
-
-```python
-import dopysl
-dopysl.init()
-print dopysl.all_active_droplets()
+```
+$ dopysl
+$ dopysl k
+$ dopysl r
+$ dopysl ssh fuzzy_name
+$ dopysl help
+$ dopysl help create
+$ dopysl create help
 ```
 
-alternatively more prettily:
-
-```python
-import dopysl
-import json
-
-pp = lambda chunk: json.dumps(chunk, sort_keys=True, indent=4)
-
-dopysl.init()
-pp(dopysl.all_active_droplets())
-```
-
-If you use APIv2 you can use strings instead of id for regions, sizes, etc.
-i.e. you can do
-
-```python
-dopysl.init()
-dopysl.new_droplet('new_vm', '512mb', 'lamp', 'ams2')
-```
-
-If you use APIv1 you first need to get ID of those.
-
-# Methods
-
-The methods are self explanatory. 
-
-```
-dopysl.init()
-dopysl.show_domain('exapmle.com')
-dopysl.new_droplet('new_droplet', '512mb', 'lamp', 'ams2')
-```
-
-More in https://github.com/t0mk/dopysl/blob/master/dopysl.py
+The last command creates small coreos-stable droplet with name "help" :).
