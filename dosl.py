@@ -36,25 +36,53 @@ def B(msg):
 class DoError(RuntimeError):
     pass
 
-import http.client
-import urllib.request, urllib.parse, urllib.error
 
 def callCheck(command, env=None, stdin=None):
     print("about to run\n%s" % command)
     if subprocess.call(command.split(), env=env, stdin=stdin):
         raise Exception("%s failed." % command)
 
+
 def print_debug():
+    import http.client
+    import urllib.parse
     """ this will print HTTP requests sent """
     # http://stackoverflow.com/questions/20658572/
     # python-requests-print-entire-http-request-raw
     global DEBUG
     DEBUG = True
-    old_send= http.client.HTTPConnection.send
+    old_send = http.client.HTTPConnection.send
     def new_send( self, data ):
-        print(urllib.parse.unquote(data).decode('utf8'))
+        print("REQUEST:")
+        print(urllib.parse.unquote(data.decode()))
         return old_send(self, data)
     http.client.HTTPConnection.send = new_send
+
+
+class MyAction(argparse.Action):
+
+    def __init__(self,
+                 option_strings,
+                 dest,
+                 const,
+                 default=None,
+                 required=False,
+                 help=None,
+                 metavar=None):
+        super(MyAction, self).__init__(
+            option_strings=option_strings,
+            dest=dest,
+            nargs=0,
+            const=const,
+            default=default,
+            required=required,
+            help=help)
+
+    # this gets called when -d/--debug is passed
+    def __call__(self, parser, namespace, values, option_string=None):
+        print_debug()
+        pass
+
 
 def get_id_by_attr(res_pattern, res_list, attr='name'):
     result_list = [i['id'] for i in res_list if i[attr] == res_pattern]
@@ -218,8 +246,8 @@ class DoManager(object):
         return json_out['regions']
 
 #images==========================================
-    def all_images(self, filter='global'):
-        params = {'filter': filter}
+    def all_images(self, distribution='global'):
+        params = {'filter': f}
         json_out = self.request('/images/', params)
         return json_out['images']
 
@@ -348,8 +376,6 @@ class DoManager(object):
 
 
     def request_v2(self, url, headers={}, params={}, method='GET'):
-        params = json.dumps(params)
-
         try:
             if method == 'POST':
                 resp = requests.post(url, data=params, headers=headers, timeout=60)
@@ -372,6 +398,7 @@ class DoManager(object):
             raise RuntimeError(e)
         
         if DEBUG:
+            print("RESPONSE:")
             print(resp.status_code)
             print(json.dumps(json_out, sort_keys=True, indent=4))
 
@@ -443,6 +470,21 @@ class DoManager(object):
                       self.avail(r['available']), ",".join(r['features']))
             print(form % fields)
 
+    @argh.aliases('i')
+    @argh.arg('--type', '-t', choices=['application', 'distribution'])
+    @argh.arg('--private', '-p', default=False, action='store_true')
+    def images(self, type='', private=False):
+        if type:
+            params = {'type': type}
+        if private: 
+            params = {'private': 'true'}
+        for i in self.request('/images/', params=params)['images']:
+            form = "%s at %s"
+            name = i['slug']
+            if not name:
+                name = i['name']
+            print(form % (R(name), B(",".join( i['regions'] ) )))
+
     @argh.aliases('k')
     def keypairs(self):
         for k in self.all_ssh_keys():
@@ -460,18 +502,15 @@ class Proxy(object):
         return cls._manager
 
 
-def init():
-    """ checks if credentials are present and initalizes the module """
-    manager = Proxy()
-
-    current_module = __import__(__name__)
-    # Following registers all the methods of DoManager to current namespace
-    # so that we can call straight list
-    # dopysl.init()
-    # dopysl.all_active_droplets()
-    for name, method in inspect.getmembers(manager, inspect.ismethod):
-        if name != "__init__":
-            setattr(current_module, name, method)
+#def init():
+#    """ checks if credentials are present and initalizes the module """
+#    manager = Proxy()
+#
+#    current_module = __import__(__name__)
+#
+#    for name, method in inspect.getmembers(manager, inspect.ismethod):
+#        if name != "__init__":
+#            setattr(current_module, name, method)
 
 
 if __name__ == "__main__":
@@ -480,9 +519,11 @@ if __name__ == "__main__":
     parser = argh.ArghParser()
 
     exposed = [do.create_droplet, do.ssh, do.droplets, do.regions, do.keypairs,
-               do.destroy_droplet, do.show_droplet_readable]
+               do.destroy_droplet, do.show_droplet_readable, do.images]
     argh.assembling.set_default_command(parser, do.droplets)
 
     parser.add_commands(exposed)
+    parser.add_argument('-d', '--debug', const=False, action=MyAction)
+
 
     parser.dispatch()
