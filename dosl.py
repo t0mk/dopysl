@@ -378,7 +378,7 @@ class DoManager(object):
     def request_v2(self, url, headers={}, params={}, method='GET'):
         try:
             if method == 'POST':
-                resp = requests.post(url, data=params, headers=headers, timeout=60)
+                resp = requests.post(url, data=json.dumps(params), headers=headers, timeout=60)
                 json_out = resp.json()
             elif method == 'DELETE':
                 resp = requests.delete(url, headers=headers, timeout=60)
@@ -474,6 +474,7 @@ class DoManager(object):
     @argh.arg('--type', '-t', choices=['application', 'distribution'])
     @argh.arg('--private', '-p', default=False, action='store_true')
     def images(self, type='', private=False):
+        params = {}
         if type:
             params = {'type': type}
         if private: 
