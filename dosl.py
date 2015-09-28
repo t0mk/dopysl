@@ -417,7 +417,7 @@ class DoManager(object):
         return json_out
 
     @argh.aliases('s')
-    def ssh(self, fuzzy_name, user='core', key=DO_KEY):
+    def ssh(self, fuzzy_name, user='core', key=DO_KEY, port='22'):
         chosen = [d for d in self.all_active_droplets()
                   if fuzzy_name in d['name']]
         if len(chosen) > 2 :
@@ -425,7 +425,7 @@ class DoManager(object):
         if len(chosen) == 0 :
             raise DoError("no droplet by that name")
         ip = self.get_public_ip(chosen[0])
-        cmd = "ssh -o IdentitiesOnly=yes -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i %s -p 22 %s@%s" % (DO_KEY, user, ip)
+        cmd = "ssh -o IdentitiesOnly=yes -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i %s -p %s %s@%s" % (DO_KEY, port, user, ip)
         callCheck(cmd)
                 
     def get_private_ip(self, d):
