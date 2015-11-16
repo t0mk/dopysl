@@ -8,6 +8,7 @@ import os
 import requests
 import argh
 import subprocess
+import urllib.parse
 
 API_ENDPOINT = 'https://api.digitalocean.com/v2'
 DEBUG = False
@@ -31,7 +32,14 @@ def G(msg):
 def B(msg):
     return C.blue + msg + C.end
             
-
+def mergedicts(dict1, dict2):
+    for k in dict2.keys():
+        if type(dict2[k]) is list:
+            # dict1[k] is most likely list
+            if k in dict1:
+                dict1[k].extend(dict2[k])
+            else:
+                dict1[k] = dict2[k]
 
 class DoError(RuntimeError):
     pass
@@ -45,7 +53,6 @@ def callCheck(command, env=None, stdin=None):
 
 def print_debug():
     import http.client
-    import urllib.parse
     """ this will print HTTP requests sent """
     # http://stackoverflow.com/questions/20658572/
     # python-requests-print-entire-http-request-raw
@@ -60,7 +67,6 @@ def print_debug():
 
 
 class MyAction(argparse.Action):
-
     def __init__(self,
                  option_strings,
                  dest,
@@ -364,14 +370,34 @@ class DoManager(object):
         return show_action(self,event_id)
 
 #low_level========================================
-    def request(self, path, params={}, method='GET'):
+    def request(self, path, params={}, method='GET', fetch_all=False):
         if not path.startswith('/'):
             path = '/'+path
         url = self.api_endpoint+path
         headers = { 'Authorization': "Bearer %s" % self.api_key }
         headers['Content-Type'] = 'application/json'
-        resp = self.request_v2(url, params=params, headers=headers,
-                               method=method)
+
+        resp = {}
+
+        while True:
+            tmp = self.request_v2(url, params=params, headers=headers,
+                                   method=method)
+            has_next = 'pages' in tmp['links']
+            if has_next:
+                has_next = 'next' in tmp['links']['pages']
+
+            if fetch_all and has_next:
+                u = urllib.parse.urlparse(tmp['links']['pages']['next'])
+                next_page = urllib.parse.parse_qs(u.query)['page'][0]
+                params['page'] = next_page
+                del(tmp['links'])
+                del(tmp['meta'])
+                #resp.update(tmp)
+                mergedicts(resp, tmp)
+            else:
+                mergedicts(resp, tmp)
+                break
+
         return resp
 
 
@@ -473,13 +499,13 @@ class DoManager(object):
     @argh.aliases('i')
     @argh.arg('--type', '-t', choices=['application', 'distribution'])
     @argh.arg('--private', '-p', default=False, action='store_true')
-    def images(self, type='', private=False):
+    def images(self, type='', private=False, fetch_all=False):
         params = {}
         if type:
             params = {'type': type}
         if private: 
             params = {'private': 'true'}
-        for i in self.request('/images/', params=params)['images']:
+        for i in self.request('/images/', params=params, fetch_all=fetch_all)['images']:
             form = "%s at %s"
             name = i['slug']
             if not name:
