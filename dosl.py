@@ -107,8 +107,8 @@ class DoManager(object):
         self.api_endpoint = API_ENDPOINT
         self.api_key = api_key
 
-    def all_active_droplets(self):
-        json_out = self.request('/droplets/')
+    def all_active_droplets(self, fetch_all=True):
+        json_out = self.request(path='/droplets/', fetch_all=fetch_all)
         return json_out['droplets']
 
     def get_key_id(self, key_name):
@@ -472,8 +472,8 @@ class DoManager(object):
         if s in ["off","archive"]:
             return R(s)
                 
-    def droplets(self):
-        for d in self.all_active_droplets():
+    def droplets(self, fetch_all=False):
+        for d in self.all_active_droplets(fetch_all):
             form = "%s[%s] %s -  %s, %s"
 
             fields = (B(d['name']), G(d['region']['slug']),
