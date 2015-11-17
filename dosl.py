@@ -34,12 +34,16 @@ def B(msg):
             
 def mergedicts(dict1, dict2):
     for k in dict2.keys():
-        if type(dict2[k]) is list:
-            # dict1[k] is most likely list
-            if k in dict1:
+        if k in dict1:
+            if type(dict2[k]) is list:
+                # dict1[k] is most likely list
                 dict1[k].extend(dict2[k])
             else:
-                dict1[k] = dict2[k]
+                l = list(dict1[k], dict2[k])
+                dict1[k] = l
+        else:
+            dict1[k] = dict2[k]
+
 
 class DoError(RuntimeError):
     pass
@@ -148,10 +152,10 @@ class DoManager(object):
         json_out = self.request('/droplets', params=params, method='POST')
         return json_out['droplet']
 
-    def show_droplet(self, id):
+    def show_droplet(self, did):
         
-        json_out = self.request('/droplets/%s' % 
-                self.get_droplet_id_or_name(id))
+        json_out = self.request('/droplets/%s' %  did)
+                #self.get_droplet_id_or_name(did))
         return json_out['droplet']
 
     @argh.aliases('show')
@@ -382,7 +386,9 @@ class DoManager(object):
         while True:
             tmp = self.request_v2(url, params=params, headers=headers,
                                    method=method)
-            has_next = 'pages' in tmp['links']
+            has_next = False
+            if 'links' in tmp:
+                has_next = 'pages' in tmp['links']
             if has_next:
                 has_next = 'next' in tmp['links']['pages']
 
@@ -397,7 +403,7 @@ class DoManager(object):
             else:
                 mergedicts(resp, tmp)
                 break
-
+        
         return resp
 
 
@@ -474,9 +480,9 @@ class DoManager(object):
                 
     def droplets(self, fetch_all=False):
         for d in self.all_active_droplets(fetch_all):
-            form = "%s[%s] %s -  %s, %s"
+            form = "%s %s[%s] %s -  %s, %s"
 
-            fields = (B(d['name']), G(d['region']['slug']),
+            fields = (G(str(d['id'])), B(d['name']), G(d['region']['slug']),
                       self.status(d['status']), self.get_public_ip(d), 
                       self.get_private_ip(d))
             print(form % fields)
