@@ -127,7 +127,7 @@ class DoManager(object):
         return id
 
     @argh.aliases('c','create')
-    def create_droplet(self, name, ssh_keys=[DO_KEYPAIR_ID],
+    def create_droplet(self, name, ssh_keys=DO_KEYPAIR_ID,
             image='coreos-stable', region='ams2', size='512mb',
             private_networking=False, backups_enabled=False,
             user_data=None, ipv6=None):
@@ -136,6 +136,7 @@ class DoManager(object):
         if user_data:
             with open(user_data, 'r') as f:
                 ud = f.read()
+        keys = ssh_keys.split(",")
         params = {
             'name': name,
             'size': size,
@@ -146,9 +147,7 @@ class DoManager(object):
             'ipv6': ipv6,
             'backups': backups_enabled,
         }
-        if not isinstance(ssh_keys, list):
-            ssh_keys = [ssh_keys]
-        params['ssh_keys'] = ssh_keys
+        params['ssh_keys'] = keys
         json_out = self.request('/droplets', params=params, method='POST')
         return json_out['droplet']
 
@@ -163,9 +162,7 @@ class DoManager(object):
         pprint.pprint(self.show_droplet(id))
 
     def droplet_v2_action(self, id, type, params={}):
-        params = {
-            'type': type
-        }
+        params['type'] = type
         json_out = self.request('/droplets/%s/actions' % id, params=params, method='POST')
         return json_out
 
@@ -217,6 +214,7 @@ class DoManager(object):
         json_out.pop('status', None)
         return json_out
 
+    @argh.aliases('reb','rebuild')
     def rebuild_droplet(self, id, image_id):
         params = {'image': image_id}
         json_out = self.droplet_v2_action(id, 'rebuild', params)
@@ -362,6 +360,17 @@ class DoManager(object):
         return True
 
 #events(actions in v2 API)========================
+    @argh.aliases('a','actions')
+    def show_actions(self, type="all"):
+        actions = self.show_all_actions()
+        for a in actions:
+            if type == "all" or a['type'] == type:
+                form = "%s on %s, id %s, finished on %s"
+
+                fields = (B(a['type']), G(a['resource_type']), R(str(a['resource_id'])), B(a['completed_at']))
+                print(form % fields)
+
+
     def show_all_actions(self):
         json_out = self.request('/actions')
         return json_out['actions']
@@ -504,7 +513,7 @@ class DoManager(object):
 
     @argh.aliases('i')
     @argh.arg('--type', '-t', choices=['application', 'distribution'])
-    @argh.arg('--private', '-p', default=False, action='store_true')
+    @argh.arg('--private', '-p', default=False)
     def images(self, type='', private=False, fetch_all=False):
         params = {}
         if type:
@@ -512,11 +521,11 @@ class DoManager(object):
         if private: 
             params = {'private': 'true'}
         for i in self.request('/images/', params=params, fetch_all=fetch_all)['images']:
-            form = "%s at %s"
+            form = "%s %s at %s"
             name = i['slug']
             if not name:
                 name = i['name']
-            print(form % (R(name), B(",".join( i['regions'] ) )))
+            print(form % (R(name), G(str(i['id'])), B(",".join( i['regions'] ) )))
 
     @argh.aliases('k')
     def keypairs(self):
@@ -552,7 +561,8 @@ if __name__ == "__main__":
     parser = argh.ArghParser()
 
     exposed = [do.create_droplet, do.ssh, do.droplets, do.regions, do.keypairs,
-               do.destroy_droplet, do.show_droplet_readable, do.images]
+               do.destroy_droplet, do.show_droplet_readable, do.images,
+               do.show_actions, do.rebuild_droplet]
     argh.assembling.set_default_command(parser, do.droplets)
 
     parser.add_commands(exposed)
