@@ -126,6 +126,13 @@ class DoManager(object):
             id = id_or_name
         return id
 
+    @argh.aliases('nf','newfloatingip')
+    def new_floating_ip(self, droplet_id):
+        params = {'droplet_id': droplet_id}
+        json_out = self.request('/floating_ips', params=params, method='POST')
+        return json_out['floating_ip']
+
+
     @argh.aliases('c','create')
     def create_droplet(self, name, ssh_keys=DO_KEYPAIR_ID,
             image='coreos-stable', region='ams2', size='512mb',
@@ -150,6 +157,7 @@ class DoManager(object):
         params['ssh_keys'] = keys
         json_out = self.request('/droplets', params=params, method='POST')
         return json_out['droplet']
+
 
     def show_droplet(self, did):
         
@@ -359,6 +367,14 @@ class DoManager(object):
         self.request('/domains/%s/records/%s' % (domain_id, record_id), method='DELETE')
         return True
 
+    @argh.aliases('f','floatips')
+    def list_floatips(self):
+        json_out = self.request('/floating_ips')
+        for fip in json_out['floating_ips']:
+            form = "%s in %s on %s"
+            fields = (B(fip['ip']), G(fip['region']['slug']), R(fip['droplet']['name']))
+            print(form % fields)
+            
 #events(actions in v2 API)========================
     @argh.aliases('a','actions')
     def show_actions(self, type="all"):
@@ -562,7 +578,8 @@ if __name__ == "__main__":
 
     exposed = [do.create_droplet, do.ssh, do.droplets, do.regions, do.keypairs,
                do.destroy_droplet, do.show_droplet_readable, do.images,
-               do.show_actions, do.rebuild_droplet]
+               do.show_actions, do.rebuild_droplet, do.list_floatips,
+               do.new_floating_ip]
     argh.assembling.set_default_command(parser, do.droplets)
 
     parser.add_commands(exposed)
