@@ -382,8 +382,14 @@ class DoManager(object):
         for a in actions:
             if type == "all" or a['type'] == type:
                 form = "%s on %s, id %s, finished on %s"
+                sanit = lambda s: str(s) if s else ""
+                ttype = sanit(a['type'])
+                rtype = sanit(a['resource_type'])
+                rid = sanit(a['resource_id'])
+                compl = sanit(a['completed_at'])
+                #print(ttype,rtype,rid,compl)
 
-                fields = (B(a['type']), G(a['resource_type']), R(str(a['resource_id'])), B(a['completed_at']))
+                fields = (B(ttype), G(rtype), R(rid), B(compl))
                 print(form % fields)
 
 
