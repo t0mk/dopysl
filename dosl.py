@@ -372,7 +372,10 @@ class DoManager(object):
         json_out = self.request('/floating_ips')
         for fip in json_out['floating_ips']:
             form = "%s in %s on %s"
-            fields = (B(fip['ip']), G(fip['region']['slug']), R(fip['droplet']['name']))
+            dn = "None"
+            if fip['droplet']:
+                dn = fip['droplet']['name']
+            fields = (B(fip['ip']), G(fip['region']['slug']), R(dn))
             print(form % fields)
             
 #events(actions in v2 API)========================
