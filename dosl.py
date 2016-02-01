@@ -174,8 +174,9 @@ class DoManager(object):
         json_out = self.request('/droplets/%s/actions' % id, params=params, method='POST')
         return json_out
 
-    def reboot_droplet(self, id):
-        json_out = self.droplet_v2_action(id, 'reboot')
+    @argh.aliases('reboot')
+    def reboot_droplet(self, did):
+        json_out = self.droplet_v2_action(did, 'reboot')
         json_out.pop('status', None)
         return json_out
 
@@ -588,7 +589,7 @@ if __name__ == "__main__":
     exposed = [do.create_droplet, do.ssh, do.droplets, do.regions, do.keypairs,
                do.destroy_droplet, do.show_droplet_readable, do.images,
                do.show_actions, do.rebuild_droplet, do.list_floatips,
-               do.new_floating_ip]
+               do.new_floating_ip, do.reboot_droplet]
     argh.assembling.set_default_command(parser, do.droplets)
 
     parser.add_commands(exposed)
