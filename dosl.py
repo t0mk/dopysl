@@ -486,7 +486,7 @@ class DoManager(object):
     @argh.aliases('s')
     def ssh(self, fuzzy_name, user='core', key=DO_KEY, port='22'):
         chosen = [d for d in self.all_active_droplets()
-                  if fuzzy_name in d['name']]
+                  if fuzzy_name == d['name']]
         if len(chosen) > 2 :
             raise DoError("name too ambiguous")   
         if len(chosen) == 0 :
