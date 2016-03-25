@@ -17,6 +17,8 @@ DO_API_TOKEN = os.environ.get('DO_API_TOKEN')
 DO_KEYPAIR_ID = os.environ.get('DO_KEYPAIR_ID')
 DO_KEY = os.environ.get('DO_KEY')
 
+REGS = ['ams', 'fra', 'lon', 'nyc', 'sfo', 'sgp', 'tor']
+
 class C:
     blue = '\033[94m'
     green = '\033[92m'
@@ -103,6 +105,14 @@ def get_id_by_attr(res_pattern, res_list, attr='name'):
         raise DoError("no resources found for %s, whole list: %s " %
                       (res_pattern, res_list))
     return result_list[0]
+
+def get_regions_string(s):
+    ret = []
+    for r in REGS:
+        t = [ a[-1] for a in s if a.startswith(r) ]
+        ret.append(r+(",".join(t)))
+    return " ".join(ret)
+
 
 
 class DoManager(object):
@@ -263,10 +273,6 @@ class DoManager(object):
         return json_out['regions']
 
 #images==========================================
-    def all_images(self, distribution='global'):
-        params = {'filter': f}
-        json_out = self.request('/images/', params)
-        return json_out['images']
 
     def image_v2_action(self, id, type, params={}):
         params = {
@@ -313,11 +319,6 @@ class DoManager(object):
         self.request('/account/keys/%s' % key_id, method='DELETE')
         return True
 
-#sizes============================================
-    def sizes(self):
-        json_out = self.request('/sizes/')
-        return json_out['sizes']
-
 #domains==========================================
     def all_domains(self):
         json_out = self.request('/domains/')
@@ -359,10 +360,6 @@ class DoManager(object):
         json_out = self.request('/domains/%s/records/%s' % (domain_id, record_id))
         return json_out['domain_record']
 
-    def edit_domain_record(self, domain_id, record_id, record_type, data, name=None, priority=None, port=None, weight=None):
-        params['name'] = name # API v.2 allows only record name change
-        json_out = self.request('/domains/%s/records/%s' % (domain_id, record_id), params, method=PUT)
-        return json_out['domain_record']
 
     def destroy_domain_record(self, domain_id, record_id):
         self.request('/domains/%s/records/%s' % (domain_id, record_id), method='DELETE')
@@ -402,11 +399,11 @@ class DoManager(object):
         return json_out['actions']
 
     def show_action(self, action_id):
-        json_out = self.request('/actions/%s' % event_id)
+        json_out = self.request('/actions/%s' % action_id)
         return json_out['action']
 
     def show_event(self, event_id):
-        return show_action(self,event_id)
+        return self.show_action(event_id)
 
 #low_level========================================
     def request(self, path, params={}, method='GET', fetch_all=False):
@@ -469,7 +466,7 @@ class DoManager(object):
             print(resp.status_code)
             print(json.dumps(json_out, sort_keys=True, indent=4))
 
-        if resp.status_code != requests.codes.ok:
+        if resp.status_code != requests.codes.ok: #pylint: disable=no-member
             if json_out:
                 if 'error_message' in json_out:
                     raise DoError(json_out['error_message'])
@@ -527,6 +524,13 @@ class DoManager(object):
              return G("available")
         else:
              return R("not avail")
+
+    @argh.aliases('s')
+    def sizes(self):
+        json_out = self.request('/sizes/')
+        for s in json_out['sizes']:
+            form = "%s: %s vcpus, at %s"
+            print(form % (R(s['slug']), G(str(s['vcpus'])), B(get_regions_string(s['regions']))))
 
     @argh.aliases('r')
     def regions(self):
@@ -589,6 +593,7 @@ if __name__ == "__main__":
     exposed = [do.create_droplet, do.ssh, do.droplets, do.regions, do.keypairs,
                do.destroy_droplet, do.show_droplet_readable, do.images,
                do.show_actions, do.rebuild_droplet, do.list_floatips,
+               do.sizes,
                do.new_floating_ip, do.reboot_droplet]
     argh.assembling.set_default_command(parser, do.droplets)
 
