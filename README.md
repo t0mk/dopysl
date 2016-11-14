@@ -1,4 +1,4 @@
-# Digital Ocean python wrapper that Sucks Less using APIv2
+# Digital Ocean python wrapper that Sucks Less 
 
 Inspired by https://github.com/ahmontero/dop and https://github.com/devo-ps/dopy. I use only APIv2.
 
